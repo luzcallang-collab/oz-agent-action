@@ -1,0 +1,26 @@
+name: Branding scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run branding scan
+        run: |
+          chmod +x scripts/scan_branding.sh
+          ./scripts/scan_branding.sh .
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: branding-report
+          path: reports/

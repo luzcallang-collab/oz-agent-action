@@ -1,0 +1,6 @@
+{
+  "workbench.editor.wrapTabs": true,
+  "github-actions.use-enterprise": true,
+  "github-actions.remote-name": "apple.com",
+  "github-actions.workflows.pinned.refresh.enabled": true
+}

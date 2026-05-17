@@ -1,0 +1,14 @@
+[Unit]
+Description=Security Agent - collects logs and monitors devices
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env bash /opt/oz-agent-action/scripts/security-agent.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/security-agent/security-agent.log
+StandardError=append:/var/log/security-agent/security-agent.log
+
+[Install]
+WantedBy=multi-user.target
