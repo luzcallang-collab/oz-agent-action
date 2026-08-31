@@ -1,0 +1,36 @@
+name: Account and Cloudflare Security Audit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * *'
+  push:
+    branches: ['main','master','production']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 100}
+      - name: Audit repository email identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '## Repository email audit'
+          git log --format='%ae' -n 100 | sort -fu | while IFS= read -r email; do
+            [[ -z "$email" ]] && continue
+            [[ "$email" =~ ^[^@[:space:]]+@users\.noreply\.github\.com$ ]] && echo "OK GitHub noreply: $email" || echo "REVIEW commit email: $email"
+          done
+          echo 'Account login settings are not modified by this workflow.'
+      - name: Audit Cloudflare zone when configured
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ZONE_ID != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}" | python -c 'import json,sys; d=json.load(sys.stdin); r=d.get("result") or {}; assert d.get("success"), "Cloudflare API audit failed"; print("Cloudflare zone:",r.get("name","unknown"),"status:",r.get("status","unknown"))'
+      - name: Cloudflare audit skipped when unconfigured
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ZONE_ID == '' }}
+        run: echo 'Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID to enable Cloudflare checks.'
